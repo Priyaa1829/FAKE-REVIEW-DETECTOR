@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Review Analysis</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>AI-Powered Review Prediction</h1>
+        <p>Submit a review below, and AI will analyze it.</p>
+        
+        <form method="POST" action="/review">
+            <textarea name="review" placeholder="Enter review..." required></textarea><br>
+            <button type="submit">Analyze Review</button>
+        </form>
+
+        {% if prediction %}
+            <div class="result">
+                <h2>Prediction:</h2>
+                <p>{{ prediction }}</p>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

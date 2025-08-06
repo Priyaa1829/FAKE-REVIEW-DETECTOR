@@ -1,44 +1,39 @@
-from flask import Flask, render_template_string, request
-import joblib
+import pickle
+from flask import Flask, request, render_template
+from flask import Flask, request, jsonify
+from sklearn.feature_extraction.text import TfidfVectorizer
 
-# Load model and vectorizer
-model = joblib.load('model.pkl')
-vectorizer = joblib.load('vectorizer.pkl')
+# Load trained model & vectorizer
+model = pickle.load(open("fake_review_detector.pkl", "rb"))
+vectorizer = pickle.load(open("check_vectorizer.pkl", "rb"))
 
-# Flask app
+# Initialize Flask app
 app = Flask(__name__)
+@app.route("/")
+def welcome():
+    return render_template("welcome.html")
 
-# HTML UI using Flask render_template_string
-HTML = '''
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Fake Review Detector</title>
-</head>
-<body style="text-align: center; padding: 50px; font-family: sans-serif;">
-    <h1>🕵️ Fake Review Detector</h1>
-    <form method="POST">
-        <textarea name="review" rows="5" cols="60" placeholder="Enter a review..."></textarea><br><br>
-        <input type="submit" value="Check Review">
-    </form>
-    {% if prediction %}
-        <h2>Prediction: <span style="color:{{ color }}">{{ prediction }}</span></h2>
-    {% endif %}
-</body>
-</html>
-'''
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    prediction = None
-    color = "black"
-    if request.method == 'POST':
-        review = request.form['review']
-        vec = vectorizer.transform([review])
-        result = model.predict(vec)[0]
-        prediction = "FAKE REVIEW" if result == 1 else "GENUINE REVIEW"
-        color = "red" if result == 1 else "green"
-    return render_template_string(HTML, prediction=prediction, color=color)
+# Route for homepage (renders `index.html`) 
+@app.route("/home")
+def home():
+    return render_template("index.html")
 
-if __name__ ==  '__main__':
+# Route for prediction
+@app.route("/predict", methods=["POST"])
+def predict():
+    review_text = request.form.get("review")  # Safely get form data
+    
+    if not review_text:
+        return jsonify({"error": "No review text provided"}), 400
+    
+    # Convert text to TF-IDF features
+    review_vector = vectorizer.transform([review_text])
+    
+    # Get prediction from trained model
+    prediction = model.predict(review_vector)[0]
+
+    return jsonify({"prediction": "Fake" if prediction == 0 else "Real"})
+# Run Flask app
+if __name__ == "__main__":
     app.run(debug=True)
